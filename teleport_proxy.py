@@ -28,49 +28,6 @@ class QuietBridge(Bridge):
         elif direction == 'upstream':
             print(f"[*][{direction}] {name}")
             self.upstream.send_packet(name, buff.read())
-
-    # def packet_upstream_chat_message(self, buff):
-    #     """Client => Proxy => Server"""
-
-    #     buff.save()
-    #     chat_message = self.read_chat(buff, "upstream")
-    #     self.logger.info(" >> %s" % chat_message)
-
-    #     if chat_message.startswith("/quiet"):
-    #         # Switch mode
-    #         self.quiet_mode = not self.quiet_mode
-
-    #         action = self.quiet_mode and "enabled" or "disabled"
-    #         msg = "Quiet mode %s" % action
-    #         self.downstream.send_packet("chat_message",
-    #                                     self.write_chat(msg, "downstream"))
-
-    #     elif self.quiet_mode and not chat_message.startswith("/"):
-    #         # Don't let the player send chat messages in quiet mode
-    #         msg = "Can't send messages while in quiet mode"
-    #         self.downstream.send_packet("chat_message",
-    #                                     self.write_chat(msg, "downstream"))
-
-    #     else:
-    #         # Pass to upstream
-    #         buff.restore()
-    #         self.upstream.send_packet("chat_message", buff.read())
-
-
-    # def packet_downstream_chat_message(self, buff):
-    #     """Server => Proxy => Client"""
-
-    #     chat_message = self.read_chat(buff, "downstream")
-    #     self.logger.info(" :: %s" % chat_message)
-
-    #     if self.quiet_mode and chat_message.startswith("<"):
-    #         # Ignore message we're in quiet mode and it looks like chat
-    #         pass
-
-    #     else:
-    #         # Pass to downstream
-    #         buff.restore()
-    #         self.downstream.send_packet("chat_message", buff.read())
         
     def packet_upstream_player_position(self, buff):
         """"""

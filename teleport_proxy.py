@@ -20,6 +20,46 @@ class QuietBridge(Bridge):
     prev_pos = None
     prev_look = None
 
+    def packet_upstream_chat_message(self, buff):
+        buff.save()
+        chat_message = buff.unpack_string()
+        print(f" >> {chat_message}")
+
+        # Teleport hack
+        # Usage: /port <distance>
+        if chat_message.startswith('/port'):
+            _, distance = chat_message.split(' ')
+            flags = 0
+            teleport = 0
+            dismount = 0
+            x, y, z, ground = self.prev_pos
+            yaw, pitch, ground = self.prev_look
+
+            # See net.minecraft.entity.Entity:getRotationVEctor()
+            # Doing this math will allow the game client to render the correct player position
+            f = pitch * 0.017453292
+            g = -yaw * 0.017453292
+            h = math.cos(g)
+            i = math.sin(g)
+            j = math.cos(f)
+            k = math.sin(f)
+            _x = i*j
+            _y = -k
+            _z = h*j
+            x += _x * float(distance)
+            y += _y * float(distance)
+            z += _z * float(distance)
+            buf = struct.pack('>dddff???', x, y, z, yaw, pitch, flags, teleport, dismount)
+            
+            # We send this teleport packet to the game client instead of the game server,
+            # and the game client will then talk to the server and update the teleported player position.
+            # If we send this packet to the game server, the game client won't render the teleport locally.
+            # That is, the game client and the game server will be out of sync.
+            self.downstream.send_packet('player_position_and_look', buf)
+
+        buff.restore()
+        self.upstream.send_packet("chat_message", buff.read())
+
     def packet_unhandled(self, buff, direction, name):
         """Handle unhandled packets."""
 

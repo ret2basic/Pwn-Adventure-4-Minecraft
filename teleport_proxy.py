@@ -24,29 +24,40 @@ class QuietBridge(Bridge):
         """Handle unhandled packets."""
 
         if direction == 'downstream':
+            # Downstream sends too many packets so we don't print them
             self.downstream.send_packet(name, buff.read())
         elif direction == 'upstream':
-            print(f"[*][{direction}] {name}")
+            # Only print upstream packets that are sent by the game client
+            print(f"[*] [{direction}] {name}")
             self.upstream.send_packet(name, buff.read())
         
     def packet_upstream_player_position(self, buff):
-        """"""
+        """Proxy sends player position to the server through upstream."""
 
         buff.save()
-        x, y, z, ground = struct.unpack('>dddB', buff.read())
+
+        # x: double
+        # y: double
+        # z: double
+        # ground: boolean
+        x, y, z, ground = struct.unpack('>ddd?', buff.read())
         print(f"[*] player_position {x} / {y} / {z} | {ground}")
         self.prev_pos = (x, y, z, ground)
-        buf = struct.pack('>dddB', x, y, z, ground)
+        buf = struct.pack('>ddd?', x, y, z, ground)
         self.upstream.send_packet('player_position', buf)
 
     def packet_upstream_player_look(self, buff):
-        """"""
+        """Proxy sends player position to the server through upstream."""
 
         buff.save()
-        yaw, pitch, ground = struct.unpack('>ffB', buff.read())
+
+        # yaw: float
+        # pitch: float
+        # ground: boolean
+        yaw, pitch, ground = struct.unpack('>ff?', buff.read())
         print(f"[*] player_look {yaw} / {pitch} | {ground}")
         self.prev_look = (yaw, pitch, ground)
-        buf = struct.pack('>ffB', yaw, pitch, ground)
+        buf = struct.pack('>ff?', yaw, pitch, ground)
         self.upstream.send_packet('player_look', buf)
 
 class QuietDownstreamFactory(DownstreamFactory):
@@ -60,9 +71,9 @@ def main(argv):
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--listen-host", default="", help="address to listen on")
-    parser.add_argument("-p", "--listen-port", default=25565, type=int, help="The proxy listens on which port")
+    parser.add_argument("-p", "--listen-port", default=25565, type=int, help="Let the game client connect to the proxy on port 25565")
     parser.add_argument("-b", "--connect-host", default="127.0.0.1", help="address to connect to")
-    parser.add_argument("-q", "--connect-port", default=12345, type=int, help="Connect to which port on the server")
+    parser.add_argument("-q", "--connect-port", default=12345, type=int, help="Let the proxy connect to the server on port 12345")
     args = parser.parse_args(argv)
 
     # Create factory
